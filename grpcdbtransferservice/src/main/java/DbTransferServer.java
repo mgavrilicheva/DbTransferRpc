@@ -53,9 +53,15 @@ public class DbTransferServer {
                 props.getProperty("pgPassword"),
                 props.getProperty("database")
         );
-        dao.initialise(ServerUtils.getQuery("initialise"));
+        try {
+            dao.clear();
+            dao.initialise(ServerUtils.getQuery("initialise"));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
 
-        SqliteDao sqlite = new SqliteDao("languages");
+        SqliteDao sqlite = new SqliteDao("temp.db");
         sqlite.setFullDbQuery(ServerUtils.getQuery("getSqliteData"));
 
         server = ServerBuilder.forPort(port)
@@ -107,38 +113,36 @@ public class DbTransferServer {
         public void acceptData(DataParams request, StreamObserver<DataResponse> responseObserver) {
             boolean status = false;
             String message = null;
-            byte[] decryptedData = null;
             try {
-                decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), keyPair.getPrivate());
+                byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), keyPair.getPrivate());
+                byte[] decompressedData = ServerUtils.decompressData(decryptedData);
+                ResultSet data;
+                synchronized (sqlite){
+                    ServerUtils.fillSqliteDb("temp.db", decompressedData);
+                    data = sqlite.getData();
+                    dao.acceptData(data);
+                    sqlite.closeConnection();
+                }
+                status = true;
+                message = "Success";
             }
             catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
                     BadPaddingException | IllegalBlockSizeException e){
                 e.printStackTrace();
                 message = "Decryption failure";
             }
-            if (message == null) {
-                byte[] decompressedData = null;
+            catch (IOException e) {
+                e.printStackTrace();
+                message = "Decompression failure";
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
                 try {
-                    decompressedData = ServerUtils.decompressData(decryptedData);
+                    sqlite.closeConnection();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
                 }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    message = "Decompression failure";
-                }
-                if (message == null) {
-                    ResultSet data;
-                    synchronized (sqlite){
-                        data = sqlite.getData(decompressedData);
-                    }
-                    try {
-                        dao.acceptData(data);
-                        status = true;
-                        message = "Success";
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        message = "Database error";
-                    }
-                }
+                message = "Database error";
             }
             responseObserver.onNext(
                     DataResponse

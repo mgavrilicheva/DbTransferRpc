@@ -66,7 +66,7 @@ class DbDao {
         dataSource.setPassword(password);
     }
 
-    public void acceptData(ResultSet data) throws SQLException {
+    void acceptData(ResultSet data) throws SQLException {
         List<Long> ids = new ArrayList<>(Collections.nCopies(idColumns.size(), null));
         while (data.next())
             for (int i = 0; i < ids.size(); i++) {
@@ -99,22 +99,16 @@ class DbDao {
                 table, String.join(",", columns), Collections.nCopies(columns.size(), "?"));
     }
 
-    public void clear()
-    {
+    void clear() throws SQLException {
         try (Connection connection = dataSource.getConnection()){
             for (String table : tables)
                 connection.createStatement().execute(String.format("TRUNCATE TABLE public.%s CASCADE;", table));
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
-    public void initialise(String initialisationQuery)
-    {
+    void initialise(String initialisationQuery) throws SQLException {
         try (Connection connection = dataSource.getConnection()){
             connection.createStatement().execute(initialisationQuery);
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 }
