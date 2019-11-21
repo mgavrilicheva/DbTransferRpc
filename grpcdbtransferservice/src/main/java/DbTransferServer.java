@@ -13,6 +13,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -118,8 +119,9 @@ public class DbTransferServer {
             String message;
             System.out.println("Someone sent data");
             try {
-                byte[] symKey = ServerUtils.decryptSymmetricKey(request.getSymmetricKey().toByteArray(), keyPair.getPrivate());
-                byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), symKey);
+                //byte[] symKey = ServerUtils.decryptSymmetricKey(request.getSymmetricKey().toByteArray(), keyPair.getPrivate());
+                byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(),
+                        request.getSymmetricKey().toByteArray());
                 byte[] decompressedData = ServerUtils.decompressData(decryptedData);
                 ResultSet data;
                 synchronized (sqlite){
@@ -132,7 +134,8 @@ public class DbTransferServer {
                 message = "Success";
             }
             catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
-                    BadPaddingException | InvalidKeySpecException | IllegalBlockSizeException e){
+                    BadPaddingException | InvalidKeySpecException | IllegalBlockSizeException |
+                    InvalidAlgorithmParameterException e){
                 e.printStackTrace();
                 message = "Decryption failure";
             }

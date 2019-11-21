@@ -49,7 +49,7 @@ namespace MessaginApp
                     }
                 case ConnectionTypes.GRPC:
                     {
-                        client = new GrpcClient(ServerIpAddress, ServerPort, new SslCredentials());
+                        client = new GrpcClient(ServerIpAddress, ServerPort, ChannelCredentials.Insecure);
                         break;
                     }
                 default:

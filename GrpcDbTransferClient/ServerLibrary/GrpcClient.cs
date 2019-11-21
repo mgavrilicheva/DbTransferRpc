@@ -3,6 +3,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using System;
+using System.Buffers.Text;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -65,13 +66,14 @@ namespace ExchangeLibrary
             {
                 var client = new DbTransferService.DbTransferServiceClient(channel);
                 byte[] encryptedData = data.Compress().Encrypt(out byte[] symmetricKey);
-                Token token = client.GetToken(new Empty());
-                X509Certificate2 certificate = GetCertificateFromBytes(token.PublicKey.ToByteArray());
-                byte[] encryptedSymmetricKey = Encrypt(symmetricKey, certificate);
+                //Token token = client.GetToken(new Empty());
+                //X509Certificate2 certificate = GetCertificateFromBytes(token.PublicKey.ToByteArray());
+                //byte[] encryptedSymmetricKey = Encrypt(symmetricKey, certificate);
+                Console.WriteLine(Convert.ToBase64String(symmetricKey));
                 DataResponse response =
                     client.AcceptData(new DataParams()
                     {
-                        SymmetricKey = ByteString.CopyFrom(new byte[4]),
+                        SymmetricKey = ByteString.CopyFrom(symmetricKey),
                         Data = ByteString.CopyFrom(encryptedData),
                     });
                 if (!response.Status)

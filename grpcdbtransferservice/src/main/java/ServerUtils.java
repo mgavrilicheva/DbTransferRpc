@@ -2,6 +2,7 @@ import org.apache.commons.io.IOUtils;
 
 import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -20,9 +21,10 @@ final class ServerUtils {
 
     static byte[] decryptData(byte[] data, byte[] symKey) throws
             NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException {
-        Cipher desCipher = Cipher.getInstance("DES");
-        desCipher.init(Cipher.DECRYPT_MODE, SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(symKey)));
+            BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+        Cipher desCipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
+        desCipher.init(Cipher.DECRYPT_MODE, SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(symKey)),
+                new IvParameterSpec(symKey));
         return desCipher.doFinal(data);
     }
 
@@ -45,7 +47,7 @@ final class ServerUtils {
 
     static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-        keyGenerator.initialize(2048);
+        keyGenerator.initialize(4096);
         return keyGenerator.generateKeyPair();
     }
 
