@@ -56,6 +56,22 @@ class DbDao {
             Arrays.asList("rec_id", "lang_info_rec_id", "country_id", "is_state_language")
     );
 
+    private static final List<List<Types>> columnTypes = Arrays.asList(
+            Arrays.asList(Types.LONG, Types.STRING),
+            Arrays.asList(Types.LONG, Types.STRING,Types.LONG),
+            Arrays.asList(Types.LONG, Types.STRING, Types.LONG),
+            Arrays.asList(Types.LONG, Types.STRING),
+            Arrays.asList(Types.LONG, Types.STRING, Types.INT, Types.LONG),
+            Arrays.asList(Types.LONG, Types.STRING, Types.INT),
+            Arrays.asList(Types.LONG, Types.LONG, Types.LONG, Types.LONG),
+            Arrays.asList(Types.LONG, Types.STRING, Types.STRING),
+            Arrays.asList(Types.LONG, Types.LONG, Types.LONG, Types.BOOLEAN)
+    );
+
+    enum Types {
+        LONG, INT, BOOLEAN, STRING
+    }
+
     private final HikariDataSource dataSource;
 
     DbDao(String host, int port, String username, String password, String database)
@@ -84,7 +100,20 @@ class DbDao {
                     try (Connection connection = dataSource.getConnection()){
                         PreparedStatement statement = connection.prepareStatement(query);
                         for (int j = 0; j < insertParams.get(i).size(); j++)
-                            statement.setObject(j + 1, data.getObject(bindings.get(i).get(j)));
+                            switch (columnTypes.get(i).get(j)){
+                                case LONG:
+                                    statement.setLong(j + 1, data.getLong(bindings.get(i).get(j)));
+                                    break;
+                                case INT:
+                                    statement.setInt(j + 1, data.getInt(bindings.get(i).get(j)));
+                                    break;
+                                case BOOLEAN:
+                                    statement.setBoolean(j + 1, data.getBoolean(bindings.get(i).get(j)));
+                                    break;
+                                case STRING:
+                                    statement.setString(j + 1, data.getString(bindings.get(i).get(j)));
+                                    break;
+                            }
                         statement.executeUpdate();
                     } catch (SQLException e) {
                         e.printStackTrace();
@@ -96,7 +125,8 @@ class DbDao {
     private String buildInsertQuery(String table, List<String> columns)
     {
         return String.format("INSERT INTO public.%s(%s) VALUES(%s) ON CONFLICT DO NOTHING;",
-                table, String.join(",", columns), Collections.nCopies(columns.size(), "?"));
+                table, String.join(",", columns),
+                String.join(",", Collections.nCopies(columns.size(), "?")));
     }
 
     void clear() throws SQLException {

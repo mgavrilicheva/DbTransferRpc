@@ -11,7 +11,7 @@ class SqliteDao {
 
     SqliteDao(String fileName){
         dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(String.format("jdbc:sqlite:/%s", fileName));
+        dataSource.setJdbcUrl(String.format("jdbc:sqlite:%s", fileName));
     }
 
     void closeConnection() throws SQLException {
