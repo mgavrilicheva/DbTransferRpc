@@ -33,5 +33,10 @@ namespace ExchangeLibrary
             if (!response.Status)
                 throw new Exception(response.Message);
         }
+
+        public override void Stop()
+        {
+            channel.ShutdownAsync().Wait();
+        }
     }
 }

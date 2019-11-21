@@ -132,5 +132,10 @@ namespace MessaginApp
                 sendButton.IsEnabled = true;
             }
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            client.Stop();
+        }
     }
 }

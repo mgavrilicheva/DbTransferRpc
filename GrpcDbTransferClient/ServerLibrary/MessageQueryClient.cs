@@ -33,5 +33,10 @@ namespace ExchangeLibrary
                 }
             }
         }
+
+        public override void Stop()
+        {
+            
+        }
     }
 }

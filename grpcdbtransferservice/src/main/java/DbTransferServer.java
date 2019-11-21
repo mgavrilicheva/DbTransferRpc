@@ -112,7 +112,7 @@ public class DbTransferServer {
         @Override
         public void acceptData(DataParams request, StreamObserver<DataResponse> responseObserver) {
             boolean status = false;
-            String message = null;
+            String message;
             try {
                 byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), keyPair.getPrivate());
                 byte[] decompressedData = ServerUtils.decompressData(decryptedData);
