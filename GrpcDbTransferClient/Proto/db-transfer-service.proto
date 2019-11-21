@@ -1,0 +1,32 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "dbtransferservice.contract";
+option java_outer_classname = "DbTransferServiceProto";
+option objc_class_prefix = "DTS";
+
+package dbtransferservice;
+
+service DbTransferService{
+  rpc GetToken(google.protobuf.Empty) returns (Token);
+  rpc AcceptData(DataParams) returns (DataResponse);
+}
+
+message Token
+{
+  bytes public_key = 1;
+}
+
+message DataParams
+{
+  Token token = 1;
+  bytes symmetric_key = 2;
+  bytes data = 3;
+}
+
+message DataResponse
+{
+  bool status = 1;
+  string message = 2;
+}
