@@ -54,8 +54,8 @@ public class DbTransferServer {
                 props.getProperty("database")
         );
         try {
-            dao.clear();
             dao.initialise(ServerUtils.getQuery("initialise"));
+            dao.clear();
         } catch (SQLException e) {
             e.printStackTrace();
             return;
@@ -103,6 +103,7 @@ public class DbTransferServer {
 
         @Override
         public void getToken(Empty request, StreamObserver<Token> responseObserver) {
+            System.out.println("Someone requested a token");
             responseObserver.onNext(
                 Token.newBuilder()
                 .setPublicKey(ByteString.copyFrom(keyPair.getPublic().getEncoded()))
@@ -113,6 +114,7 @@ public class DbTransferServer {
         public void acceptData(DataParams request, StreamObserver<DataResponse> responseObserver) {
             boolean status = false;
             String message;
+            System.out.println("Someone sent data");
             try {
                 byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), keyPair.getPrivate());
                 byte[] decompressedData = ServerUtils.decompressData(decryptedData);

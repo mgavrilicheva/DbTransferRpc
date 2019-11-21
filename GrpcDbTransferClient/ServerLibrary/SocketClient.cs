@@ -34,10 +34,5 @@ namespace ExchangeLibrary
                 client.Shutdown(SocketShutdown.Both);
             }
         }
-
-        public override void Stop()
-        {
-            
-        }
     }
 }

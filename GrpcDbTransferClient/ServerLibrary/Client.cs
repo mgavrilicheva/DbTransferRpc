@@ -16,6 +16,5 @@ namespace ExchangeLibrary
         }
 
         public abstract void Send(byte[] data);
-        public abstract void Stop();
     }
 }

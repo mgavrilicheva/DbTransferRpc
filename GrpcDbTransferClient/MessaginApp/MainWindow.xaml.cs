@@ -135,7 +135,7 @@ namespace MessaginApp
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            client.Stop();
+            client?.Stop();
         }
     }
 }

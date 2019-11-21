@@ -8,35 +8,42 @@ namespace ExchangeLibrary
 {
     public class GrpcClient : Client
     {
-        private readonly Channel channel;
-        private readonly DbTransferService.DbTransferServiceClient client;
+        private string serverAddress;
+        private int serverPort;
+        private ChannelCredentials credentials;
 
         public GrpcClient(string serverAddress, int serverPort, ChannelCredentials credentials)
         {
-            channel = new Channel(serverAddress, serverPort, ChannelCredentials.Insecure);
-            client = new DbTransferService.DbTransferServiceClient(channel);
+            this.serverAddress = serverAddress;
+            this.serverPort = serverPort;
+            this.credentials = credentials;
         }
 
         public override void Send(byte[] data)
         {
-            byte[] encryptedData = data.Compress().Encrypt(out byte[] symmetricKey);
-            Token token = client.GetToken(new Empty());
-            byte[] encryptedSymmetricKey = 
-                EncodeSymmetricKey(symmetricKey, token.PublicKey.ToByteArray());
-            DataResponse response = 
-                client.AcceptData(new DataParams() 
-                    { 
+            Channel channel = new Channel(serverAddress, serverPort, credentials);
+            try
+            {
+                var client = new DbTransferService.DbTransferServiceClient(channel);
+                byte[] encryptedData = data.Compress().Encrypt(out byte[] symmetricKey);
+                Token token = client.GetToken(new Empty());
+                byte[] encryptedSymmetricKey =
+                    EncodeSymmetricKey(symmetricKey, token.PublicKey.ToByteArray());
+                DataResponse response =
+                    client.AcceptData(new DataParams()
+                    {
                         Token = token,
                         SymmetricKey = ByteString.CopyFrom(encryptedSymmetricKey),
                         Data = ByteString.CopyFrom(encryptedData),
                     });
-            if (!response.Status)
-                throw new Exception(response.Message);
-        }
-
-        public override void Stop()
-        {
-            channel.ShutdownAsync().Wait();
+                if (!response.Status)
+                    throw new Exception(response.Message);
+            }
+            finally
+            {
+                channel.ShutdownAsync().Wait();
+            }
+            
         }
     }
 }
