@@ -8,9 +8,9 @@ namespace ExchangeLibrary
 {
     public class GrpcClient : Client
     {
-        private string serverAddress;
-        private int serverPort;
-        private ChannelCredentials credentials;
+        private readonly string serverAddress;
+        private readonly int serverPort;
+        private readonly ChannelCredentials credentials;
 
         public GrpcClient(string serverAddress, int serverPort, ChannelCredentials credentials)
         {
@@ -43,7 +43,6 @@ namespace ExchangeLibrary
             {
                 channel.ShutdownAsync().Wait();
             }
-            
         }
     }
 }
