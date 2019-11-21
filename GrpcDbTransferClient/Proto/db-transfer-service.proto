@@ -20,9 +20,8 @@ message Token
 
 message DataParams
 {
-  Token token = 1;
-  bytes symmetric_key = 2;
-  bytes data = 3;
+  bytes symmetric_key = 1;
+  bytes data = 2;
 }
 
 message DataResponse

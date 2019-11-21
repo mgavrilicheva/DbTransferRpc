@@ -7,7 +7,7 @@ namespace ExchangeLibrary
         protected byte[] EncodeSymmetricKey(byte[] symmetricKey, byte[] publicKey)
         {
             byte[] encryptedKey = null;
-            using (var rsa = new RSACryptoServiceProvider(4096))
+            using (var rsa = new RSACryptoServiceProvider())
             {
                 rsa.ImportCspBlob(publicKey);
                 encryptedKey = rsa.Encrypt(symmetricKey, RSAEncryptionPadding.Pkcs1);

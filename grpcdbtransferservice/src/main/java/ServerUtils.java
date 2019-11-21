@@ -1,11 +1,10 @@
 import org.apache.commons.io.IOUtils;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
+import javax.crypto.spec.DESKeySpec;
 import java.io.*;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.zip.GZIPInputStream;
 
 final class ServerUtils {
@@ -19,12 +18,20 @@ final class ServerUtils {
         }
     }
 
-    static byte[] decryptData(byte[] encryptedData, PrivateKey privKey)
+    static byte[] decryptData(byte[] data, byte[] symKey) throws
+            NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
+            BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException {
+        Cipher desCipher = Cipher.getInstance("DES");
+        desCipher.init(Cipher.DECRYPT_MODE, SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(symKey)));
+        return desCipher.doFinal(data);
+    }
+
+    static byte[] decryptSymmetricKey(byte[] encryptedSymKey, PrivateKey privKey)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
             BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privKey);
-        return cipher.doFinal(encryptedData);
+        return cipher.doFinal(encryptedSymKey);
     }
 
     static void fillSqliteDb(String filename, byte[] data) throws IOException {
@@ -38,7 +45,7 @@ final class ServerUtils {
 
     static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-        keyGenerator.initialize(4096);
+        keyGenerator.initialize(2048);
         return keyGenerator.generateKeyPair();
     }
 

@@ -3,6 +3,10 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace ExchangeLibrary
 {
@@ -19,6 +23,41 @@ namespace ExchangeLibrary
             this.credentials = credentials;
         }
 
+        private static byte[] Encrypt(byte[] symmetricKey, X509Certificate2 certificate) 
+        {
+            byte[] encryptedKey = null;
+            using (var rsa = (RSACryptoServiceProvider)certificate.PublicKey.Key)
+            {
+                encryptedKey = rsa.Encrypt(symmetricKey, false);
+            }
+            return encryptedKey;
+        } 
+
+        private static X509Certificate2 GetCertificateFromBytes(byte[] cert)
+        {
+            string certFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            try
+            {
+                File.WriteAllBytes(certFile, cert);
+
+                X509Store store = new X509Store(StoreLocation.CurrentUser);
+                try
+                {
+                    store.Open(OpenFlags.ReadOnly);
+                    X509Certificate2Collection certCollection = store.Certificates;
+                    return certCollection[0];
+                }
+                finally
+                {
+                    store.Close();
+                }
+            }
+            finally
+            {
+                File.Delete(certFile);
+            }
+        }
+
         public override void Send(byte[] data)
         {
             Channel channel = new Channel(serverAddress, serverPort, credentials);
@@ -27,13 +66,12 @@ namespace ExchangeLibrary
                 var client = new DbTransferService.DbTransferServiceClient(channel);
                 byte[] encryptedData = data.Compress().Encrypt(out byte[] symmetricKey);
                 Token token = client.GetToken(new Empty());
-                byte[] encryptedSymmetricKey =
-                    EncodeSymmetricKey(symmetricKey, token.PublicKey.ToByteArray());
+                X509Certificate2 certificate = GetCertificateFromBytes(token.PublicKey.ToByteArray());
+                byte[] encryptedSymmetricKey = Encrypt(symmetricKey, certificate);
                 DataResponse response =
                     client.AcceptData(new DataParams()
                     {
-                        Token = token,
-                        SymmetricKey = ByteString.CopyFrom(encryptedSymmetricKey),
+                        SymmetricKey = ByteString.CopyFrom(new byte[4]),
                         Data = ByteString.CopyFrom(encryptedData),
                     });
                 if (!response.Status)

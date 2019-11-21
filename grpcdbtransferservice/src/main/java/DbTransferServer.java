@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -63,8 +64,8 @@ public class DbTransferServer {
 
         SqliteDao sqlite = new SqliteDao("temp.db");
         sqlite.setFullDbQuery(ServerUtils.getQuery("getSqliteData"));
-
         server = ServerBuilder.forPort(port)
+
                 .addService(new DbTransferServiceImpl(keyPair, dao, sqlite))
                 .build()
                 .start();
@@ -108,6 +109,7 @@ public class DbTransferServer {
                 Token.newBuilder()
                 .setPublicKey(ByteString.copyFrom(keyPair.getPublic().getEncoded()))
                 .build());
+            responseObserver.onCompleted();
         }
 
         @Override
@@ -116,7 +118,8 @@ public class DbTransferServer {
             String message;
             System.out.println("Someone sent data");
             try {
-                byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), keyPair.getPrivate());
+                byte[] symKey = ServerUtils.decryptSymmetricKey(request.getSymmetricKey().toByteArray(), keyPair.getPrivate());
+                byte[] decryptedData = ServerUtils.decryptData(request.getData().toByteArray(), symKey);
                 byte[] decompressedData = ServerUtils.decompressData(decryptedData);
                 ResultSet data;
                 synchronized (sqlite){
@@ -129,7 +132,7 @@ public class DbTransferServer {
                 message = "Success";
             }
             catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
-                    BadPaddingException | IllegalBlockSizeException e){
+                    BadPaddingException | InvalidKeySpecException | IllegalBlockSizeException e){
                 e.printStackTrace();
                 message = "Decryption failure";
             }
@@ -152,6 +155,7 @@ public class DbTransferServer {
                     .setStatus(status)
                     .setMessage(message)
                     .build());
+            responseObserver.onCompleted();
         }
     }
 }
